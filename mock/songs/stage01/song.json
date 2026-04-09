@@ -1,0 +1,7 @@
+{
+  "title": "Stage 01",
+  "bpm": 120,
+  "drums": "drums.mp3",
+  "samples": ["sample1.mp3", "sample2.mp3", "sample3.mp3", "sample4.mp3"],
+  "chart": "chart.mid"
+}

@@ -14,27 +14,49 @@ python3 -m http.server 8000
 
 START を押す → ブラウザのオーディオ許可が下りてループ開始。
 
+URL paramで曲切替: `http://localhost:8000/?song=stage01`
+
 ## 操作
 
-| キー | ボタン | 位置 | サンプル |
+| キー | ボタン | レーン | サンプル |
 |---|---|---|---|
-| D | □ | 左 | left  |
-| F | × | 下 | down  |
-| J | ○ | 右 | right |
-| K | △ | 上 | up    |
+| D | □ | 上から3 | sample1 |
+| F | × | 下     | sample2 |
+| J | ○ | 上から2 | sample3 |
+| K | △ | 上     | sample4 |
 
-## 素材を差し替える
+## 曲を追加する
 
-`mock/assets/` に以下の wav を置く。無い場合はプレースホルダ音(合成)が自動で鳴る。
+1曲 = 1フォルダ。`mock/songs/<id>/` を作って中に必要ファイルを置く。
 
-- `drums.wav` … ドラム+ベース 8小節ループ(BPM 90 を想定。違うBPMにする場合は `src/chart.js` の `BPM` を合わせる)
-- `pad_left.wav` / `pad_down.wav` / `pad_right.wav` / `pad_up.wav` … ウワモノ4種
+```
+mock/songs/stage01/
+  song.json     ← 設定
+  drums.mp3     ← オケ(ドラム+ベース、ループ前提)
+  sample1.mp3   ← □ 左 (D)
+  sample2.mp3   ← × 下 (F)
+  sample3.mp3   ← ○ 右 (J)
+  sample4.mp3   ← △ 上 (K)
+  chart.mid     ← 譜面 (任意)
+```
 
-## 譜面を編集する (MIDI)
+`song.json`:
 
-`mock/charts/stage01.mid` を DAW から書き出して置く。BPM は MIDI ヘッダから自動取得。
+```json
+{
+  "title": "Stage 01",
+  "bpm": 90,
+  "drums": "drums.mp3",
+  "samples": ["sample1.mp3", "sample2.mp3", "sample3.mp3", "sample4.mp3"],
+  "chart": "chart.mid"
+}
+```
 
-ノート → ボタン マッピング:
+ファイル名は `song.json` で指定するので自由(`drums.wav` でも可)。BPM もここで指定。MIDI があればヘッダのBPMが優先される。
+
+## 譜面 (MIDI)
+
+DAW から書き出した `.mid` を `chart` に指定。マッピング:
 
 | MIDIノート | ボタン |
 |---|---|
@@ -45,15 +67,13 @@ START を押す → ブラウザのオーディオ許可が下りてループ開
 
 ノートの長さとベロシティは無視、発音タイミングのみ使用。
 
-譜面切替: `?chart=stage02` のように URL paramで指定可能。MIDI が無ければ `chart.js` の `FALLBACK_CHART` が使われる。
-
 ## 構成
 
 - `src/audio.js` — Web Audio ラッパ。`AudioContext.currentTime` を時間基準にする
 - `src/input.js` — keydown 時刻を audio time で記録
-- `src/chart.js` — 譜面ハードコード
-- `src/game.js` — スクロール描画 + 判定(±60ms)
-- `src/main.js` — 起動
+- `src/song.js`  — 曲マニフェスト + MIDI 譜面ローダ
+- `src/game.js`  — レーン描画 + 判定(±60ms) + パッドHUD
+- `src/main.js`  — 起動
 
 ## 含まれていないもの(意図的)
 

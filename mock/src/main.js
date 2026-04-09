@@ -29,8 +29,8 @@ const songId = params.get('song') || 'stage01';
     startBtn.textContent = 'START';
     startBtn.addEventListener('click', async () => {
       if (audio.ctx.state === 'suspended') await audio.ctx.resume();
-      audio.startLoop('drums');
       const game = new Game(canvas, audio, input, song.chart);
+      audio.startLoop('drums', game.precountDur);
       game.loop();
       startBtn.disabled = true;
       startBtn.textContent = 'PLAYING';

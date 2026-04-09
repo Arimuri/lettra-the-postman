@@ -58,7 +58,7 @@ export class Audio {
     return buf;
   }
 
-  startLoop(name) {
+  startLoop(name, delay = 0) {
     const buf = this.buffers[name];
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
@@ -66,7 +66,7 @@ export class Audio {
     src.connect(this.ctx.destination);
     this.startTime = this.ctx.currentTime + 0.1; // small offset for stable scheduling
     this.loopDuration = buf.duration;
-    src.start(this.startTime);
+    src.start(this.startTime + delay);
     this.started = true;
   }
 

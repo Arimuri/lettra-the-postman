@@ -1,0 +1,26 @@
+name: Deploy mock to Sakura
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mock/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SFTP upload mock/ to Sakura
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.SAKURA_HOST }}
+          username: ${{ secrets.SAKURA_USER }}
+          password: ${{ secrets.SAKURA_PASSWORD }}
+          port: 22
+          local_path: './mock/*'
+          remote_path: ${{ secrets.SAKURA_REMOTE_DIR }}
+          sftpArgs: '-o ConnectTimeout=10'

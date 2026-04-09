@@ -5,8 +5,6 @@
 //   sample1..4.mp3
 //   chart.mid   (optional)
 
-import { Midi } from 'https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/+esm';
-
 const NOTE_TO_BUTTON = { 60: 0, 62: 1, 64: 2, 65: 3 };
 
 export async function loadSong(id) {
@@ -15,19 +13,20 @@ export async function loadSong(id) {
   if (!res.ok) throw new Error(`song.json not found: ${id}`);
   const manifest = await res.json();
 
-  // Resolve URLs relative to song folder
   const urls = {
     drums: `${base}/${manifest.drums}`,
     samples: manifest.samples.map(s => `${base}/${s}`),
     chart: manifest.chart ? `${base}/${manifest.chart}` : null,
   };
 
-  // Load chart (MIDI). Falls back to empty notes if missing.
+  // Load chart from MIDI if available, otherwise use empty chart.
   let chart = { notes: [], bpm: manifest.bpm, duration: 0 };
   if (urls.chart) {
     try {
       const cr = await fetch(urls.chart);
       if (cr.ok) {
+        // Dynamic import: only load @tonejs/midi when we actually have a .mid file
+        const { Midi } = await import('https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/+esm');
         const arr = await cr.arrayBuffer();
         const midi = new Midi(arr);
         const notes = [];
@@ -45,10 +44,10 @@ export async function loadSong(id) {
           duration: midi.duration,
         };
       } else {
-        console.warn(`chart not found: ${urls.chart} — empty chart`);
+        console.warn(`chart not found: ${urls.chart} — using empty chart`);
       }
     } catch (e) {
-      console.warn(`chart load failed: ${e.message}`);
+      console.warn(`chart load failed: ${e.message} — using empty chart`);
     }
   }
 

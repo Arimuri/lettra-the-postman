@@ -28,7 +28,7 @@ jobs:
           echo "pass length: ${#SSHPASS}"
           sshpass -e ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=no "$USER@$HOST" "echo OK; pwd; ls" || echo "ssh exit: $?"
 
-      - name: Upload mock/ to Sakura via SFTP
+      - name: Upload mock/ to Sakura via rsync
         env:
           HOST: ${{ secrets.SAKURA_HOST }}
           USER: ${{ secrets.SAKURA_USER }}
@@ -36,12 +36,6 @@ jobs:
           REMOTE: ${{ secrets.SAKURA_REMOTE_DIR }}
         run: |
           set -e
-          lftp -e "
-            set sftp:auto-confirm yes;
-            set sftp:connect-program 'sshpass -e ssh -a -x -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null';
-            set net:timeout 15;
-            set net:max-retries 2;
-            open sftp://$USER@$HOST;
-            mirror -R --verbose --delete mock/ $REMOTE;
-            bye
-          "
+          sshpass -e rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            mock/ "$USER@$HOST:$REMOTE"

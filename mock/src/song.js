@@ -10,7 +10,7 @@ import { Midi } from 'https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/+esm';
 const NOTE_TO_BUTTON = { 60: 0, 62: 1, 64: 2, 65: 3 };
 
 export async function loadSong(id) {
-  const base = `../songs/${id}`;
+  const base = `./songs/${id}`;
   const res = await fetch(`${base}/song.json`);
   if (!res.ok) throw new Error(`song.json not found: ${id}`);
   const manifest = await res.json();

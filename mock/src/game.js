@@ -85,21 +85,46 @@ export class Game {
       c.globalAlpha = 1;
     }
 
-    // --- ground / road ---
-    // Horizon line (thin)
+    // --- ground / road (hand-drawn style) ---
+    // Use seeded random from x position for consistent wobble per frame
+    const seed = (x) => Math.sin(x * 127.1 + 311.7) * 0.5 + 0.5;
+
+    // Main ground line (wobbly)
     c.strokeStyle = '#1a1a1a';
-    c.lineWidth = 1;
+    c.lineWidth = 1.8;
     c.beginPath();
-    c.moveTo(0, ROAD_Y + 40);
-    c.lineTo(W, ROAD_Y + 40);
+    const gy = ROAD_Y + 40;
+    c.moveTo(0, gy + (seed(0) - 0.5) * 3);
+    for (let x = 4; x <= W; x += 4) {
+      const wobble = (seed(x * 0.07) - 0.5) * 3;
+      c.lineTo(x, gy + wobble);
+    }
     c.stroke();
 
-    // Scrolling ground dots (wire-frame ground feeling)
-    const dotSpacing = 60;
-    const dotOffset = (now * SCROLL_PX_PER_SEC * 0.3) % dotSpacing;
-    c.fillStyle = 'rgba(26,26,26,0.15)';
-    for (let x = -dotOffset; x < W; x += dotSpacing) {
-      c.fillRect(x, ROAD_Y + 42, 2, 2);
+    // Second faint line below (sketch double-stroke feel)
+    c.strokeStyle = 'rgba(26,26,26,0.12)';
+    c.lineWidth = 0.8;
+    c.beginPath();
+    c.moveTo(0, gy + 3 + (seed(0.5) - 0.5) * 2);
+    for (let x = 4; x <= W; x += 4) {
+      const wobble = (seed(x * 0.07 + 50) - 0.5) * 2;
+      c.lineTo(x, gy + 3 + wobble);
+    }
+    c.stroke();
+
+    // Scrolling hash marks (hand-drawn ground texture)
+    const markSpacing = 50;
+    const scrollOffset = (now * SCROLL_PX_PER_SEC * 0.3) % markSpacing;
+    c.strokeStyle = 'rgba(26,26,26,0.12)';
+    c.lineWidth = 1;
+    for (let x = -scrollOffset; x < W; x += markSpacing) {
+      const w1 = (seed(x * 0.13) - 0.5) * 4;
+      const w2 = (seed(x * 0.13 + 7) - 0.5) * 4;
+      const len = 6 + seed(x * 0.31) * 8;
+      c.beginPath();
+      c.moveTo(x + w1, gy + 6);
+      c.lineTo(x + w2, gy + 6 + len);
+      c.stroke();
     }
 
     // --- judge zone ---

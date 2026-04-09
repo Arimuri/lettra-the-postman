@@ -14,28 +14,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install lftp and sshpass
-        run: sudo apt-get update && sudo apt-get install -y lftp sshpass
-
-      - name: Debug — try ssh connect
+      - name: Setup SSH key
         env:
-          HOST: ${{ secrets.SAKURA_HOST }}
-          USER: ${{ secrets.SAKURA_USER }}
-          SSHPASS: ${{ secrets.SAKURA_PASSWORD }}
+          SSH_KEY: ${{ secrets.SAKURA_SSH_KEY }}
         run: |
-          echo "host length: ${#HOST}"
-          echo "user length: ${#USER}"
-          echo "pass length: ${#SSHPASS}"
-          sshpass -e ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=no "$USER@$HOST" "echo OK; pwd; ls" || echo "ssh exit: $?"
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SAKURA_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Upload mock/ to Sakura via rsync
         env:
           HOST: ${{ secrets.SAKURA_HOST }}
           USER: ${{ secrets.SAKURA_USER }}
-          SSHPASS: ${{ secrets.SAKURA_PASSWORD }}
           REMOTE: ${{ secrets.SAKURA_REMOTE_DIR }}
         run: |
-          set -e
-          sshpass -e rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519" \
             mock/ "$USER@$HOST:$REMOTE"

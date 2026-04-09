@@ -372,8 +372,14 @@ export class Game {
   }
 
   loop() {
+    const now = performance.now();
+    // Update logic runs every frame for tight input
     this.update();
-    this.draw();
+    // Draw at 12fps
+    if (!this._lastDraw || now - this._lastDraw >= 1000 / 12) {
+      this._lastDraw = now;
+      this.draw();
+    }
     requestAnimationFrame(() => this.loop());
   }
 }

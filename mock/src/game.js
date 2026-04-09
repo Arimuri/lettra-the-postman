@@ -376,7 +376,7 @@ export class Game {
     // Update logic runs every frame for tight input
     this.update();
     // Draw at 12fps
-    if (!this._lastDraw || now - this._lastDraw >= 1000 / 12) {
+    if (!this._lastDraw || now - this._lastDraw >= 1000 / 24) {
       this._lastDraw = now;
       this.draw();
     }

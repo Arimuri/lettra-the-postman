@@ -4,7 +4,8 @@ import { parseMidi } from './midi.js';
 const NOTE_TO_BUTTON = { 60: 0, 62: 1, 64: 2, 65: 3 };
 
 export async function loadSong(id) {
-  const base = `./songs/${id}`;
+  // Resolve relative to this script's location (src/), go up one level to reach songs/
+  const base = new URL(`../songs/${id}`, import.meta.url).href;
   const res = await fetch(`${base}/song.json`);
   if (!res.ok) throw new Error(`song.json not found: ${id}`);
   const manifest = await res.json();

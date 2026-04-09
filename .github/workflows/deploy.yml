@@ -21,14 +21,16 @@ jobs:
         env:
           HOST: ${{ secrets.SAKURA_HOST }}
           USER: ${{ secrets.SAKURA_USER }}
-          PASS: ${{ secrets.SAKURA_PASSWORD }}
+          SSHPASS: ${{ secrets.SAKURA_PASSWORD }}
           REMOTE: ${{ secrets.SAKURA_REMOTE_DIR }}
         run: |
           set -e
-          lftp -u "$USER","$PASS" -e "
+          lftp -e "
             set sftp:auto-confirm yes;
+            set sftp:connect-program 'sshpass -e ssh -a -x -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null';
             set net:timeout 15;
             set net:max-retries 2;
+            open sftp://$USER@$HOST;
             mirror -R --verbose --delete mock/ $REMOTE;
             bye
-          " sftp://$HOST
+          "

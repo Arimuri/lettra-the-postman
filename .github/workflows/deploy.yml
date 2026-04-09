@@ -14,13 +14,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: SFTP upload mock/ to Sakura
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: ${{ secrets.SAKURA_HOST }}
-          username: ${{ secrets.SAKURA_USER }}
-          password: ${{ secrets.SAKURA_PASSWORD }}
-          port: 22
-          local_path: './mock/*'
-          remote_path: ${{ secrets.SAKURA_REMOTE_DIR }}
-          sftpArgs: '-o ConnectTimeout=10'
+      - name: Install lftp and sshpass
+        run: sudo apt-get update && sudo apt-get install -y lftp sshpass
+
+      - name: Upload mock/ to Sakura via SFTP
+        env:
+          HOST: ${{ secrets.SAKURA_HOST }}
+          USER: ${{ secrets.SAKURA_USER }}
+          PASS: ${{ secrets.SAKURA_PASSWORD }}
+          REMOTE: ${{ secrets.SAKURA_REMOTE_DIR }}
+        run: |
+          set -e
+          lftp -u "$USER","$PASS" -e "
+            set sftp:auto-confirm yes;
+            set net:timeout 15;
+            set net:max-retries 2;
+            mirror -R --verbose --delete mock/ $REMOTE;
+            bye
+          " sftp://$HOST

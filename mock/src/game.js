@@ -9,6 +9,51 @@ const ROAD_Y = 180;            // road center line
 const JUDGE_X = 180;           // where postman stands / judge point
 const SCROLL_PX_PER_SEC = 300;
 const JUDGE_WINDOW = 0.060;    // ±60ms
+const WOBBLE = 1.2;            // max px jitter on lines
+
+// Wobble system: wraps canvas context so all line drawing gets hand-drawn jitter.
+// Call wobbleOn(ctx) to enable, wobbleOff(ctx) to restore.
+let _wobbleSeed = 0;
+function jitter() {
+  _wobbleSeed = (_wobbleSeed * 1103515245 + 12345) & 0x7fffffff;
+  return ((_wobbleSeed / 0x7fffffff) - 0.5) * WOBBLE * 2;
+}
+
+function wobbleOn(ctx) {
+  if (ctx._origMoveTo) return; // already on
+  // Randomize seed each frame for different wobble
+  _wobbleSeed = (performance.now() * 1000) | 0;
+  ctx._origMoveTo = ctx.moveTo.bind(ctx);
+  ctx._origLineTo = ctx.lineTo.bind(ctx);
+  ctx._origArc = ctx.arc.bind(ctx);
+  ctx._origRect = ctx.strokeRect.bind(ctx);
+  ctx._origFillRect = ctx.fillRect.bind(ctx);
+  ctx.moveTo = (x, y) => ctx._origMoveTo(x + jitter(), y + jitter());
+  ctx.lineTo = (x, y) => ctx._origLineTo(x + jitter(), y + jitter());
+  ctx.arc = (x, y, r, s, e, cc) => ctx._origArc(x + jitter(), y + jitter(), r, s, e, cc);
+  ctx.strokeRect = (x, y, w, h) => {
+    const j = jitter(), k = jitter();
+    ctx._origRect(x + j, y + k, w, h);
+  };
+  ctx.fillRect = (x, y, w, h) => {
+    const j = jitter(), k = jitter();
+    ctx._origFillRect(x + j, y + k, w, h);
+  };
+}
+
+function wobbleOff(ctx) {
+  if (!ctx._origMoveTo) return;
+  ctx.moveTo = ctx._origMoveTo;
+  ctx.lineTo = ctx._origLineTo;
+  ctx.arc = ctx._origArc;
+  ctx.strokeRect = ctx._origRect;
+  ctx.fillRect = ctx._origFillRect;
+  delete ctx._origMoveTo;
+  delete ctx._origLineTo;
+  delete ctx._origArc;
+  delete ctx._origRect;
+  delete ctx._origFillRect;
+}
 
 // 4 letter types: button index -> color, key, label
 const LETTERS = [
@@ -68,7 +113,9 @@ export class Game {
   draw() {
     const c = this.ctx;
     const now = this.gameTime();
+    wobbleOff(c); // ensure clean for clearRect
     c.clearRect(0, 0, W, H);
+    wobbleOn(c);
 
     // --- precount ---
     if (now < 0) {
@@ -267,7 +314,8 @@ export class Game {
       c.fillText(lt.key, lx + 20, ly + 14);
     }
 
-    // --- stats ---
+    // --- stats (no wobble on text) ---
+    wobbleOff(c);
     c.fillStyle = 'rgba(26,26,26,0.5)';
     c.font = '11px ui-monospace, monospace';
     c.textAlign = 'right';
